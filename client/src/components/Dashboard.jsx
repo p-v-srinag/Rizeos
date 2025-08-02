@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import axios from 'axios';
 import Navbar from './Navbar.jsx';
@@ -9,6 +9,7 @@ const Dashboard = () => {
     const [formData, setFormData] = useState({ name: '', bio: '', linkedinURL: '', skills: '' });
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const resumeInputRef = useRef(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -70,6 +71,29 @@ const Dashboard = () => {
         setIsEditing(false);
     };
 
+    const handleResumeUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const token = localStorage.getItem('token');
+        const resumeFormData = new FormData();
+        resumeFormData.append('resume', file);
+
+        try {
+            const config = { headers: { 'Content-Type': 'multipart/form-data', 'x-auth-token': token } };
+            const res = await axios.post('http://localhost:5001/api/profile/parse-resume', resumeFormData, config);
+            
+            const existingSkills = new Set(formData.skills.split(',').map(s => s.trim()).filter(Boolean));
+            res.data.skills.forEach(skill => existingSkills.add(skill));
+
+            setFormData({ ...formData, skills: Array.from(existingSkills).join(', ') });
+            alert("Skills extracted from resume and added to your profile!");
+        } catch (err) {
+            console.error(err);
+            alert("Error parsing resume. Please ensure it's a valid PDF.");
+        }
+    };
+
     if (loading) {
         return <div className="flex items-center justify-center h-screen bg-[#F8F9FA]">Loading Profile...</div>;
     }
@@ -102,9 +126,15 @@ const Dashboard = () => {
                                     </div>
                                     <input type="text" name="skills" value={formData.skills} onChange={onChange} className="block w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                                 </div>
-                                <div className="flex justify-end pt-4 space-x-4 border-t">
-                                    <button type="button" onClick={cancelEdit} className="px-6 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-                                    <button type="submit" className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Save Changes</button>
+                                <div className="flex justify-between pt-4 border-t">
+                                    <input type="file" ref={resumeInputRef} onChange={handleResumeUpload} className="hidden" accept=".pdf" />
+                                    <button type="button" onClick={() => resumeInputRef.current.click()} className="px-6 py-2 font-semibold text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">
+                                        Upload & Parse Resume (PDF)
+                                    </button>
+                                    <div className="flex space-x-4">
+                                        <button type="button" onClick={cancelEdit} className="px-6 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                                        <button type="submit" className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Save Changes</button>
+                                    </div>
                                 </div>
                             </form>
                         ) : (
@@ -113,7 +143,7 @@ const Dashboard = () => {
                                     <div>
                                         <h1 className="text-3xl font-bold text-gray-900">{profile?.name}</h1>
                                         <p className="mt-1 text-sm text-gray-500">{profile?.email}</p>
-                                        {profile?.linkedinURL && <a href={profile.linkedinURL} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-sm text-blue-500 hover:underline">{profile.linkedinURL}</a>}
+                                        {profile?.linkedinURL && <a href={profile.linkedinURL.startsWith('http') ? profile.linkedinURL : `https://${profile.linkedinURL}`} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-sm text-blue-500 hover:underline">{profile.linkedinURL}</a>}
                                     </div>
                                     <button onClick={() => setIsEditing(true)} className="px-4 py-2 font-semibold text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">Edit Profile</button>
                                 </div>

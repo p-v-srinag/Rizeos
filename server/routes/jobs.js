@@ -26,11 +26,19 @@ router.post('/', auth, async (req, res) => {
 });
 
 // @route   GET api/jobs
-// @desc    Get all jobs
-router.get('/', async (req, res) => {
+// @desc    Get all jobs, with optional skill filtering
+// @access  Private (for logged-in users)
+router.get('/', auth, async (req, res) => {
     try {
-        // Find all jobs and populate the 'user' field with the poster's name
-        const jobs = await Job.find().populate('user', 'name').sort({ createdAt: -1 });
+        const { skill } = req.query;
+        let query = {};
+
+        if (skill) {
+            // Create a case-insensitive regex for the skill to find partial matches
+            query.skills = { $regex: new RegExp(skill, 'i') };
+        }
+
+        const jobs = await Job.find(query).populate('user', 'name').sort({ createdAt: -1 });
         res.json(jobs);
     } catch (err) {
         console.error(err.message);

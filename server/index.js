@@ -1,11 +1,13 @@
-// server/index.js
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
 const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile'); // 1. Import profile routes
+const profileRoutes = require('./routes/profile');
+const jobRoutes = require('./routes/jobs');
+const postRoutes = require('./routes/posts');
+const profilesApiRoutes = require('./routes/profiles'); // Renamed for clarity
 
 dotenv.config();
 const app = express();
@@ -19,7 +21,10 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes); // 2. Tell Express to use profile routes
+app.use('/api/profile', profileRoutes); // For the logged-in user's own profile
+app.use('/api/profiles', profilesApiRoutes); // For viewing other profiles and interactions
+app.use('/api/jobs', jobRoutes);
+app.use('/api/posts', postRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello from Rizeos Server!');

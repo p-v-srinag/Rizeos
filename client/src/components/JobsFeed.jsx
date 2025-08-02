@@ -7,35 +7,38 @@ const JobsFeed = () => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userProfile, setUserProfile] = useState(null);
+    const [filter, setFilter] = useState('');
     const { user } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchJobsAndProfile = async () => {
+            setLoading(true);
             const token = localStorage.getItem('token');
-            if (!token) {
-                setLoading(false);
-                return;
-            }
+            if (!token) { setLoading(false); return; }
             
             try {
                 const config = { headers: { 'x-auth-token': token } };
-                const [jobsRes, profileRes] = await Promise.all([
-                    axios.get('http://localhost:5001/api/jobs', config),
-                    axios.get('http://localhost:5001/api/profile/me', config)
-                ]);
+                // Add filter as a query parameter to the API call
+                const jobsRes = await axios.get(`http://localhost:5001/api/jobs?skill=${filter}`, config);
+                const profileRes = await axios.get('http://localhost:5001/api/profile/me', config);
                 
                 setJobs(jobsRes.data);
                 setUserProfile(profileRes.data);
-            } catch (err) { 
-                console.error(err); 
-            }
+            } catch (err) { console.error(err); }
             setLoading(false);
         };
 
         if (user) {
-            fetchJobsAndProfile();
+            // Use a timeout to prevent API calls on every keystroke
+            const handler = setTimeout(() => {
+                fetchJobsAndProfile();
+            }, 500); // 500ms delay
+
+            return () => {
+                clearTimeout(handler);
+            };
         }
-    }, [user]);
+    }, [user, filter]); // Re-fetch when the user or filter changes
 
     // AI Logic: Calculate Match Score
     const calculateMatchScore = (userSkills, jobSkills) => {
@@ -58,16 +61,23 @@ const JobsFeed = () => {
                 <div className="px-4 mx-auto max-w-4xl">
                     <div className="pb-8 border-b border-gray-200">
                         <h1 className="text-3xl font-bold text-gray-900">Open Opportunities</h1>
-                        <p className="mt-1 text-sm text-gray-600">Browse jobs tailored to your skills.</p>
+                        <p className="mt-1 text-sm text-gray-600">Browse and apply for jobs from top companies.</p>
+                        {/* Filter Input */}
+                        <div className="mt-6">
+                            <input 
+                                type="text"
+                                placeholder="Filter by skill (e.g., React, Node.js, Solidity...)"
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                className="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
                     </div>
                     <div className="mt-8">
-                        {loading ? (
-                            <p className="text-center text-gray-500">Loading jobs...</p>
-                        ) : jobs.length > 0 ? (
+                        {loading ? <p className="text-center text-gray-500">Loading jobs...</p> : jobs.length > 0 ? (
                             <ul className="space-y-6">
                                 {jobs.map(job => {
                                     const matchScore = calculateMatchScore(userProfile?.skills, job.skills);
-                                    
                                     return (
                                         <li key={job._id} className="relative p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
                                             <div className="absolute top-0 right-0 p-4">
@@ -92,12 +102,7 @@ const JobsFeed = () => {
                                     );
                                 })}
                             </ul>
-                        ) : (
-                            <div className="p-12 text-center bg-white rounded-lg shadow-md">
-                                <h3 className="text-lg font-medium text-gray-900">No Jobs Found</h3>
-                                <p className="mt-1 text-sm text-gray-500">There are currently no open positions. Be the first to post one!</p>
-                            </div>
-                        )}
+                        ) : <p className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-md">No jobs found for this filter.</p>}
                     </div>
                 </div>
             </main>
