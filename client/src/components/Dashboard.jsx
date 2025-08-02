@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import axios from 'axios';
 import Navbar from './Navbar.jsx';
+import RecommendedJobs from './RecommendedJobs.jsx';
 import keyword_extractor from 'keyword-extractor';
 
 const Dashboard = () => {
@@ -56,8 +57,8 @@ const Dashboard = () => {
             return;
         }
         const keywords = keyword_extractor.extract(formData.bio, { language: "english", remove_digits: true, return_changed_case: true, remove_duplicates: true });
-        const stopwords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'he', 'him', 'his', 'she', 'her', 'it', 'its', 'they', 'them', 'their', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'from', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can', 'will', 'just', 'should', 'now', 'developer', 'experience', 'skilled', 'worked'];
-        const filteredKeywords = keywords.filter(kw => !stopwords.includes(kw) && kw.length > 1);
+        const stopwords = ['i', 'me', 'my', 'and', 'the', 'a', 'to', 'of', 'for', 'in', 'with', 'experience', 'work', 'project', 'company', 'university', 'date', 'contact', 'email', 'phone', 'education', 'summary', 'professional', 'skill', 'skills', 'profile', 'objective', 'github', 'linkedin'];
+        const filteredKeywords = keywords.filter(kw => !stopwords.includes(kw) && kw.length > 2 && isNaN(kw));
         setFormData({ ...formData, skills: filteredKeywords.join(', ') });
     };
 
@@ -163,6 +164,14 @@ const Dashboard = () => {
                                         </dd>
                                     </div>
                                 </dl>
+                                <div className="mt-8 pt-6 border-t border-gray-200">
+                                    <h3 className="text-xl font-bold text-gray-900">Recommended Jobs</h3>
+                                    {profile?.skills && profile.skills.length > 0 ? (
+                                        <RecommendedJobs userSkills={profile.skills} />
+                                    ) : (
+                                        <p className="text-sm text-gray-500">Please add skills to your profile to see job recommendations.</p>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>

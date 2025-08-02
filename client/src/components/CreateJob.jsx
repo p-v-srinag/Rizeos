@@ -5,8 +5,8 @@ import { ethers } from 'ethers';
 import Navbar from './Navbar.jsx';
 import JobBoard from '../artifacts/contracts/JobBoard.sol/JobBoard.json';
 
-// IMPORTANT: This will be replaced with your deployed contract address
-const contractAddress = "YOUR_DEPLOYED_JOBBOARD_CONTRACT_ADDRESS_HERE"; 
+// IMPORTANT: Replace with your actual deployed contract address on Polygon Amoy
+const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
 const platformFee = "0.001";
 
 const CreateJob = () => {
@@ -37,7 +37,8 @@ const CreateJob = () => {
             const contract = new ethers.Contract(contractAddress, JobBoard.abi, signer);
 
             setStatusMessage('Please confirm the transaction in MetaMask...');
-            const jobDataHash = `Job post by ${signer.address} at ${Date.now()}`;
+            
+            const jobDataHash = ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(formData)));
             
             const tx = await contract.postJob(jobDataHash, {
                 value: ethers.parseEther(platformFee)
@@ -47,10 +48,10 @@ const CreateJob = () => {
             await tx.wait();
 
             setStatusMessage('Transaction successful! Posting job to our database...');
-
             const token = localStorage.getItem('token');
             const config = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
-            await axios.post('http://localhost:5001/api/jobs', formData, config);
+            const jobSkillsArray = skills.split(',').map(skill => skill.trim()).filter(Boolean);
+            await axios.post('http://localhost:5001/api/jobs', { ...formData, skills: jobSkillsArray }, config);
             
             alert('Job successfully posted on-chain and to our platform!');
             navigate('/jobs');

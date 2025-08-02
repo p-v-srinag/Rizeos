@@ -5,6 +5,7 @@ const User = require('../models/User');
 
 // @route   GET api/profiles/:userId
 // @desc    Get profile by user ID
+// @access  Public (viewable by anyone logged in)
 router.get('/:userId', auth, async (req, res) => {
     try {
         const profile = await User.findById(req.params.userId).select('-password');
@@ -18,6 +19,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 // @route   PUT api/profiles/interact/:userId
 // @desc    Send an interact/connection request
+// @access  Private
 router.put('/interact/:userId', auth, async (req, res) => {
     try {
         const recipient = await User.findById(req.params.userId);
@@ -38,6 +40,7 @@ router.put('/interact/:userId', auth, async (req, res) => {
 
 // @route   PUT api/profiles/accept/:senderId
 // @desc    Accept a connection request
+// @access  Private
 router.put('/accept/:senderId', auth, async (req, res) => {
     try {
         const currentUser = await User.findById(req.user.id);

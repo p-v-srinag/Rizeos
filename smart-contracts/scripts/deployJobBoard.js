@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-  const platformFee = hre.ethers.parseEther("0.001"); // Set the initial fee to 0.001 ETH/MATIC
+  const platformFee = hre.ethers.parseEther("0.001");
 
   const jobBoard = await hre.ethers.deployContract("JobBoard", [platformFee]);
 

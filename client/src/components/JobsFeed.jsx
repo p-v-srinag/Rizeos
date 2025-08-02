@@ -18,7 +18,6 @@ const JobsFeed = () => {
             
             try {
                 const config = { headers: { 'x-auth-token': token } };
-                // Add filter as a query parameter to the API call
                 const jobsRes = await axios.get(`http://localhost:5001/api/jobs?skill=${filter}`, config);
                 const profileRes = await axios.get('http://localhost:5001/api/profile/me', config);
                 
@@ -29,16 +28,15 @@ const JobsFeed = () => {
         };
 
         if (user) {
-            // Use a timeout to prevent API calls on every keystroke
             const handler = setTimeout(() => {
                 fetchJobsAndProfile();
-            }, 500); // 500ms delay
+            }, 500); 
 
             return () => {
                 clearTimeout(handler);
             };
         }
-    }, [user, filter]); // Re-fetch when the user or filter changes
+    }, [user, filter]); 
 
     // AI Logic: Calculate Match Score
     const calculateMatchScore = (userSkills, jobSkills) => {
@@ -74,7 +72,7 @@ const JobsFeed = () => {
                         </div>
                     </div>
                     <div className="mt-8">
-                        {loading ? <p className="text-center text-gray-500">Loading jobs...</p> : jobs.length > 0 ? (
+                        {loading ? <p className="p-12 text-center text-gray-500 bg-white rounded-lg shadow-md">Loading jobs...</p> : jobs.length > 0 ? (
                             <ul className="space-y-6">
                                 {jobs.map(job => {
                                     const matchScore = calculateMatchScore(userProfile?.skills, job.skills);

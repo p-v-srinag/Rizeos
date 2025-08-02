@@ -16,12 +16,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (formData) => {
+    // Note: The URL is hardcoded for local testing. This should be a dynamic environment variable for production.
     const res = await axios.post('http://localhost:5001/api/auth/login', formData);
     localStorage.setItem('token', res.data.token);
     setUser({ token: res.data.token });
   };
   
   const register = async (formData) => {
+    // Note: The URL is hardcoded for local testing. This should be a dynamic environment variable for production.
     const res = await axios.post('http://localhost:5001/api/auth/register', formData);
     localStorage.setItem('token', res.data.token);
     setUser({ token: res.data.token });

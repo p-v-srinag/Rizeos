@@ -1,16 +1,19 @@
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Register from './components/Register.jsx';
-import Login from './components/Login.jsx';
+import Login from './components/login.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import CreateJob from './components/CreateJob.jsx';
 import JobsFeed from './components/JobsFeed.jsx';
 import Feed from './components/Feed.jsx';
-import ProfilePage from './components/ProfilePage.jsx'; // 1. Import new component
+import ProfilePage from './components/ProfilePage.jsx';
 import { AuthContext } from './context/AuthContext.jsx';
 
 const PrivateRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen bg-[#F8F9FA]">Loading...</div>;
+  }
   return user ? children : <Navigate to="/login" />;
 };
 

@@ -16,6 +16,8 @@ contract JobBoard {
     mapping(uint256 => Job) public jobs;
 
     event JobPosted(uint256 indexed jobId, address indexed poster, string jobDataHash);
+    event FeeWithdrawn(address indexed owner, uint256 amount);
+    event PlatformFeeUpdated(uint256 oldFee, uint256 newFee);
 
     constructor(uint256 _initialFee) {
         owner = msg.sender;
@@ -39,11 +41,19 @@ contract JobBoard {
 
     function withdrawFees() public {
         require(msg.sender == owner, "JobBoard: Only the owner can withdraw fees.");
-        payable(owner).transfer(address(this).balance);
+        
+        uint256 balance = address(this).balance;
+        require(balance > 0, "JobBoard: No fees to withdraw.");
+        
+        payable(owner).transfer(balance);
+        emit FeeWithdrawn(owner, balance);
     }
 
     function setPlatformFee(uint256 _newFee) public {
         require(msg.sender == owner, "JobBoard: Only the owner can set the fee.");
+        
+        uint256 oldFee = platformFee;
         platformFee = _newFee;
+        emit PlatformFeeUpdated(oldFee, _newFee);
     }
 }

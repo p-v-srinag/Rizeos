@@ -2,17 +2,17 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Job = require('../models/Job');
-const User = require('../models/User');
 
 // @route   POST api/jobs
 // @desc    Create a new job post
+// @access  Private
 router.post('/', auth, async (req, res) => {
     const { title, description, skills, budget } = req.body;
     try {
         const newJob = new Job({
             title,
             description,
-            skills: Array.isArray(skills) ? skills : skills.split(',').map(skill => skill.trim()),
+            skills,
             budget,
             user: req.user.id
         });
@@ -27,17 +27,14 @@ router.post('/', auth, async (req, res) => {
 
 // @route   GET api/jobs
 // @desc    Get all jobs, with optional skill filtering
-// @access  Private (for logged-in users)
-router.get('/', auth, async (req, res) => {
+// @access  Public (for now)
+router.get('/', async (req, res) => {
     try {
         const { skill } = req.query;
         let query = {};
-
         if (skill) {
-            // Create a case-insensitive regex for the skill to find partial matches
             query.skills = { $regex: new RegExp(skill, 'i') };
         }
-
         const jobs = await Job.find(query).populate('user', 'name').sort({ createdAt: -1 });
         res.json(jobs);
     } catch (err) {

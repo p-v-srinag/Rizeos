@@ -5,6 +5,7 @@ const CreatePost = ({ addPostToFeed }) => {
     const [text, setText] = useState('');
     const [mediaFile, setMediaFile] = useState(null);
     const [preview, setPreview] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
 
     const handleFileChange = (e) => {
@@ -23,19 +24,33 @@ const CreatePost = ({ addPostToFeed }) => {
 
     const onSubmit = async (e) => {
         e.preventDefault();
+        setIsUploading(true);
         const token = localStorage.getItem('token');
-        const formData = new FormData();
-        formData.append('text', text);
-        if (mediaFile) formData.append('media', mediaFile);
+        let mediaUrl = '', mediaType = '';
 
         try {
-            const config = { headers: { 'Content-Type': 'multipart/form-data', 'x-auth-token': token } };
-            const res = await axios.post('http://localhost:5001/api/posts', formData, config);
+            // Step 1: Upload media to Cloudinary if a file is selected
+            if (mediaFile) {
+                const mediaFormData = new FormData();
+                mediaFormData.append('media', mediaFile);
+                const uploadConfig = { headers: { 'x-auth-token': token } };
+                const uploadRes = await axios.post('http://localhost:5001/api/posts/upload-media', mediaFormData, uploadConfig);
+                mediaUrl = uploadRes.data.mediaUrl;
+                mediaType = uploadRes.data.mediaType;
+            }
+
+            // Step 2: Create the post with the text and media URL
+            const postData = { text, mediaUrl, mediaType };
+            const postConfig = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
+            const res = await axios.post('http://localhost:5001/api/posts', postData, postConfig);
+
             addPostToFeed(res.data);
             setText('');
             removeMedia();
         } catch (err) {
-            alert("Error creating post. Check file type and size.");
+            alert(err.response?.data?.msg || "Error creating post. Please try again.");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -56,7 +71,9 @@ const CreatePost = ({ addPostToFeed }) => {
                         <button type="button" onClick={() => fileInputRef.current.click()} className="px-4 py-2 text-sm font-semibold text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">Add Media</button>
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,video/*,.pdf" />
                     </div>
-                    <button type="submit" className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Post</button>
+                    <button type="submit" disabled={isUploading} className="px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400">
+                        {isUploading ? 'Uploading...' : 'Post'}
+                    </button>
                 </div>
             </form>
         </div>
