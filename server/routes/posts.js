@@ -13,27 +13,35 @@ cloudinary.config({
 });
 
 // @route   POST api/posts/upload-media
-// @desc    Upload a single media file to Cloudinary
+// @desc    Upload multiple media files to Cloudinary
 // @access  Private
-router.post('/upload-media', [auth, upload.single('media')], async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ msg: 'No file uploaded.' });
-  }
-  try {
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-    const result = await cloudinary.uploader.upload(dataURI, { resource_type: "auto", folder: "rizeos_posts" });
-    
-    let mediaType;
-    if (result.resource_type === 'video') mediaType = 'video';
-    else if (req.file.mimetype === 'application/pdf') mediaType = 'pdf';
-    else mediaType = 'image';
+router.post('/upload-media', auth, upload.array('media'), async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ msg: 'No files uploaded.' });
+    }
+    try {
+        const uploadPromises = req.files.map(file => {
+            const b64 = Buffer.from(file.buffer).toString("base64");
+            const dataURI = `data:${file.mimetype};base64,${b64}`;
+            return cloudinary.uploader.upload(dataURI, { resource_type: "auto", folder: "rizeos_posts" });
+        });
+        
+        const results = await Promise.all(uploadPromises);
+        
+        const mediaUrls = results.map(result => result.secure_url);
+        const mediaTypes = req.files.map(file => {
+            if (file.mimetype.startsWith('video')) return 'video';
+            if (file.mimetype.startsWith('audio')) return 'audio';
+            if (file.mimetype.includes('pdf')) return 'pdf';
+            if (file.mimetype.includes('officedocument') || file.mimetype.includes('text')) return 'document';
+            return 'image';
+        });
 
-    res.json({ mediaUrl: result.secure_url, mediaType });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server Error');
-  }
+        res.json({ mediaUrls, mediaTypes });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
 
 
@@ -41,12 +49,12 @@ router.post('/upload-media', [auth, upload.single('media')], async (req, res) =>
 // @desc    Create a new post with optional media
 // @access  Private
 router.post('/', auth, async (req, res) => {
-    const { text, mediaUrl, mediaType } = req.body;
+    const { text, mediaUrls, mediaTypes } = req.body;
     if (!text || text.trim() === '') {
         return res.status(400).json({ msg: 'Text is required' });
     }
     try {
-        const newPost = new Post({ text, user: req.user.id, mediaUrl, mediaType });
+        const newPost = new Post({ text, user: req.user.id, mediaUrls, mediaTypes });
         const post = await newPost.save();
         const populatedPost = await Post.findById(post._id).populate('user', 'name');
         res.json(populatedPost);
@@ -75,7 +83,6 @@ router.put('/clap/:id', auth, async (req, res) => {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ msg: 'Post not found' });
         
-        // Check if the user has already clapped
         if (post.claps.some(clap => clap.user.toString() === req.user.id)) {
             post.claps = post.claps.filter(({ user }) => user.toString() !== req.user.id);
         } else {
@@ -104,15 +111,21 @@ router.post('/comment/:id', auth, async (req, res) => {
 
 
 // @route   POST api/posts/share/:id
-// @desc    Increment share count for a post
-// @access  Public (or private, depending on your app logic)
-router.post('/share/:id', async (req, res) => {
+// @desc    Increment share count for a post by a unique user
+// @access  Private
+router.post('/share/:id', auth, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
         if (!post) {
             return res.status(404).json({ msg: 'Post not found' });
         }
+        
+        if (post.sharedBy.includes(req.user.id)) {
+            return res.status(400).json({ msg: 'You have already shared this post' });
+        }
+        
         post.shares = (post.shares || 0) + 1;
+        post.sharedBy.push(req.user.id);
         await post.save();
         res.json({ shares: post.shares });
     } catch (err) {

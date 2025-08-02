@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import axios from 'axios';
 import Navbar from './Navbar.jsx';
 import RecommendedJobs from './RecommendedJobs.jsx';
+import PostStatusMessage from './PostStatusMessage.jsx';
 import keyword_extractor from 'keyword-extractor';
 
 const Dashboard = () => {
@@ -10,6 +11,7 @@ const Dashboard = () => {
     const [formData, setFormData] = useState({ name: '', bio: '', linkedinURL: '', skills: '' });
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [statusMessage, setStatusMessage] = useState({ message: '', type: '' });
     const resumeInputRef = useRef(null);
 
     useEffect(() => {
@@ -40,14 +42,19 @@ const Dashboard = () => {
         const token = localStorage.getItem('token');
         try {
             const config = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
-            const body = { ...formData, skills: formData.skills.split(',').map(skill => skill.trim()).filter(Boolean) };
+            const body = { 
+                name: formData.name,
+                bio: formData.bio,
+                linkedinURL: formData.linkedinURL,
+                skills: formData.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+            };
             const res = await axios.post('http://localhost:5001/api/profile', body, config);
             setProfile(res.data);
             setIsEditing(false);
-            alert('Profile Updated Successfully!');
+            setStatusMessage({ message: 'Profile Updated Successfully!', type: 'success' });
         } catch (err) {
             console.error(err.message);
-            alert('Error updating profile.');
+            setStatusMessage({ message: 'Error updating profile.', type: 'error' });
         }
     };
 
@@ -177,6 +184,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </main>
+            {statusMessage.message && <PostStatusMessage message={statusMessage.message} type={statusMessage.type} />}
         </div>
     );
 };

@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import Notifications from './Notifications.jsx';
+import logo from '/Rizeos.jpg'; // Import the logo image
 
 const Navbar = () => {
     const { logout } = useContext(AuthContext);
@@ -31,7 +32,10 @@ const Navbar = () => {
             <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
-                        <NavLink to="/feed" className="text-2xl font-bold text-blue-600">RizeOS</NavLink>
+                        <NavLink to="/feed" className="flex items-center space-x-2">
+                            <img src={logo} alt="RizeOS Logo" className="h-8 w-auto" />
+                            <span className="text-2xl font-bold text-blue-600">RizeOS</span>
+                        </NavLink>
                     </div>
                     <div className="hidden md:flex items-center space-x-8">
                         <NavLink to="/feed" className="px-1 py-5 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-900" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Feed</NavLink>

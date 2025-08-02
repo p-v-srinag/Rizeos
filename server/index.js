@@ -1,35 +1,37 @@
+require('dotenv').config();
+
 const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
 const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
 
-const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile');
-const jobRoutes = require('./routes/jobs');
-const postRoutes = require('./routes/posts');
-const profilesApiRoutes = require('./routes/profiles'); // Renamed for clarity
-
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
+const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Successfully connected to MongoDB!'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+// Connect to MongoDB
+mongoose.connect(MONGO_URI)
+    .then(() => console.log('Successfully connected to MongoDB!'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Import Routes
+const authRoutes = require('./routes/auth');
+const postsRoutes = require('./routes/posts');
+const profileRoutes = require('./routes/profile');
+const profilesRoutes = require('./routes/profiles');
+const jobsRoutes = require('./routes/jobs');
+const recommendationsRoutes = require('./routes/recommendations');
+
+// Use Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes); // For the logged-in user's own profile
-app.use('/api/profiles', profilesApiRoutes); // For viewing other profiles and interactions
-app.use('/api/jobs', jobRoutes);
-app.use('/api/posts', postRoutes);
+app.use('/api/posts', postsRoutes);
+app.use('/api/profile', profileRoutes); // Corrected: This now handles /api/profile and /api/profile/me
+app.use('/api/profiles', profilesRoutes); // This handles /api/profiles/:userId, etc.
+app.use('/api/jobs', jobsRoutes);
+app.use('/api/recommendations', recommendationsRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Hello from Rizeos Server!');
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server is running on port ${PORT}`));

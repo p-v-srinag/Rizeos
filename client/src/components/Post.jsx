@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext.jsx';
+import MediaModal from './MediaModal.jsx';
+import { jwtDecode } from 'jwt-decode';
+import PostStatusMessage from './PostStatusMessage.jsx'; // Make sure this is imported
 
 const Post = ({ postData, updatePostInFeed }) => {
     const [post, setPost] = useState(postData);
@@ -8,6 +12,15 @@ const Post = ({ postData, updatePostInFeed }) => {
     const [showComments, setShowComments] = useState(false);
     const [showSharePopup, setShowSharePopup] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [modalMediaIndex, setModalMediaIndex] = useState(null);
+    const [statusMessage, setStatusMessage] = useState({ message: '', type: '' });
+
+    const { user } = useContext(AuthContext);
+
+    // Correctly get the logged-in user's ID from the token
+    const userId = user ? jwtDecode(user.token).user.id : null;
+
+    const hasClapped = post.claps.some(clap => clap.user && clap.user.toString() === userId);
 
     const handleClap = async () => {
         const token = localStorage.getItem('token');
@@ -52,7 +65,9 @@ const Post = ({ postData, updatePostInFeed }) => {
             updatePostInFeed(updatedPost);
             setShowSharePopup(true);
         } catch (err) {
-            alert(err.response?.data?.msg || 'Error sharing post.');
+            console.error(err);
+            const msg = err.response?.data?.msg || 'Error sharing post.';
+            setShowSharePopup(true); // Still show the pop-up, but with an error message
         }
     };
 
@@ -71,6 +86,30 @@ const Post = ({ postData, updatePostInFeed }) => {
         }
     };
 
+    const openModal = (index) => {
+        setModalMediaIndex(index);
+    };
+
+    const closeModal = () => {
+        setModalMediaIndex(null);
+    };
+    
+    const renderMediaPreview = (url, type, index) => {
+      switch (type) {
+        case 'image':
+          return <img src={url} alt={`Post content ${index}`} className="w-full h-32 object-cover rounded-lg" />;
+        case 'video':
+          return <video src={url} className="w-full h-32 object-cover rounded-lg" />;
+        case 'audio':
+          return <div className="flex items-center justify-center w-full h-32 bg-gray-100 rounded-lg"><span className="text-gray-500">Audio File</span></div>;
+        case 'document':
+        case 'pdf':
+          return <div className="flex items-center justify-center w-full h-32 bg-gray-100 rounded-lg"><svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>;
+        default:
+          return <div className="w-full h-32 bg-gray-100 rounded-lg">Unsupported File</div>;
+      }
+    };
+
     return (
         <div className="p-6 bg-white rounded-xl shadow-lg">
             <div className="flex items-center space-x-3">
@@ -81,14 +120,21 @@ const Post = ({ postData, updatePostInFeed }) => {
                 </div>
             </div>
             <p className="my-4 text-gray-700 whitespace-pre-wrap">{post.text}</p>
-            {post.mediaUrl && (
-                <div className="my-4 border rounded-lg overflow-hidden">
-                    {post.mediaType === 'image' && <img src={post.mediaUrl} alt="Post content" className="w-full max-h-[600px] object-contain" />}
-                    {post.mediaType === 'video' && <video src={post.mediaUrl} controls className="w-full max-h-[600px] bg-black" />}
-                    {post.mediaType === 'pdf' && <a href={post.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center p-4 text-blue-600 bg-gray-100 hover:bg-gray-200 transition-colors"><svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>View Document</a>}
+            {post.mediaUrls && post.mediaUrls.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                    {post.mediaUrls.slice(0, 2).map((url, index) => (
+                        <div key={index} onClick={() => openModal(index)} className="cursor-pointer w-1/2 p-1">
+                             {renderMediaPreview(url, post.mediaTypes[index], index)}
+                        </div>
+                    ))}
+                    {post.mediaUrls.length > 2 && (
+                        <div onClick={() => openModal(2)} className="cursor-pointer w-1/2 p-1 flex items-center justify-center bg-gray-200 text-gray-700 rounded-lg text-lg font-bold">
+                            +{post.mediaUrls.length - 2}
+                        </div>
+                    )}
                 </div>
             )}
-            <div className="flex items-center justify-between text-sm text-gray-500">
+            <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
                 <div className="flex items-center space-x-4">
                     <span>{post.claps.length} Claps</span>
                     <button onClick={() => setShowComments(!showComments)} className="hover:underline">{post.comments.length} Comments</button>
@@ -97,7 +143,7 @@ const Post = ({ postData, updatePostInFeed }) => {
             </div>
             <div className="pt-4 mt-4 border-t border-gray-200">
                 <div className="flex space-x-6 text-gray-600">
-                    <button onClick={handleClap} className="flex items-center space-x-2 hover:text-blue-600 transition-colors">
+                    <button onClick={handleClap} className={`flex items-center space-x-2 transition-colors ${hasClapped ? 'text-blue-600' : 'hover:text-blue-600'}`}>
                         <span className="text-xl">👏</span><span className="font-semibold">Clap</span>
                     </button>
                     <button onClick={() => setShowComments(!showComments)} className="flex items-center space-x-2 hover:text-blue-600 transition-colors">
@@ -139,6 +185,15 @@ const Post = ({ postData, updatePostInFeed }) => {
                     </div>
                 </div>
             )}
+            {modalMediaIndex !== null && (
+                <MediaModal
+                    mediaUrls={post.mediaUrls}
+                    mediaTypes={post.mediaTypes}
+                    startIndex={modalMediaIndex}
+                    onClose={closeModal}
+                />
+            )}
+            {statusMessage.message && <PostStatusMessage message={statusMessage.message} type={statusMessage.type} />}
         </div>
     );
 };
