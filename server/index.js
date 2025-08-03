@@ -1,3 +1,4 @@
+// This line must be at the very top of the file
 require('dotenv').config();
 
 const express = require('express');
@@ -9,8 +10,8 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGO_URI = process.env.MONGO_URI;
 
-// Connect to MongoDB
-mongoose.connect(MONGO_URI)
+// Connect to MongoDB with corrected options
+mongoose.connect(MONGO_URI) // useNewUrlParser and useUnifiedTopology are no longer needed
     .then(() => console.log('Successfully connected to MongoDB!'))
     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -29,8 +30,8 @@ const recommendationsRoutes = require('./routes/recommendations');
 // Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postsRoutes);
-app.use('/api/profile', profileRoutes); // Corrected: This now handles /api/profile and /api/profile/me
-app.use('/api/profiles', profilesRoutes); // This handles /api/profiles/:userId, etc.
+app.use('/api/profile', profileRoutes);
+app.use('/api/profiles', profilesRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
 

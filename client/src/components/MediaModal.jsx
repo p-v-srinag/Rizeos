@@ -31,7 +31,7 @@ const MediaModal = ({ mediaUrls, mediaTypes, startIndex, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
-      <button onClick={onClose} className="absolute top-4 right-4 text-white text-4xl">&times;</button>
+      <button onClick={onClose} className="absolute top-4 right-4 text-white bg-gray-800 bg-opacity-50 hover:bg-opacity-75 transition-colors p-2 rounded-full text-xl leading-none">&times;</button>
       
       <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
         {renderMedia(currentUrl, currentType)}

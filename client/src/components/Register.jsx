@@ -28,12 +28,12 @@ const Register = () => {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-blue-600">RizeOS</h1>
           <h2 className="mt-2 text-xl font-semibold text-gray-800">Create an Account</h2>
-          <p className="text-sm text-gray-500">Join the next-gen professional network</p>
+          <p className="text-sm text-gray-500">Join our network to find your next opportunity</p>
         </div>
         <form className="space-y-4" onSubmit={onSubmit}>
           <div>
             <label className="text-sm font-medium text-gray-700">Full Name</label>
-            <input name="name" type="text" required className="block w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Your Name" value={name} onChange={onChange} />
+            <input name="name" type="text" required className="block w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="John Doe" value={name} onChange={onChange} />
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700">Email Address</label>
@@ -41,12 +41,12 @@ const Register = () => {
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700">Password</label>
-            <input name="password" type="password" required minLength="6" className="block w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="6+ characters" value={password} onChange={onChange} />
+            <input name="password" type="password" required className="block w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="••••••••" value={password} onChange={onChange} />
           </div>
           {error && <div className="p-3 text-sm font-medium text-red-800 bg-red-100 rounded-lg">{error}</div>}
           <div>
             <button type="submit" className="w-full px-4 py-3 font-semibold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-              Create Account
+              Sign Up
             </button>
           </div>
           <p className="text-sm text-center text-gray-600">

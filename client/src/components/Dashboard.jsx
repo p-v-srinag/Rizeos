@@ -5,35 +5,42 @@ import Navbar from './Navbar.jsx';
 import RecommendedJobs from './RecommendedJobs.jsx';
 import PostStatusMessage from './PostStatusMessage.jsx';
 import keyword_extractor from 'keyword-extractor';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
     const [profile, setProfile] = useState(null);
     const [formData, setFormData] = useState({ name: '', bio: '', linkedinURL: '', skills: '' });
+    const [postedJobs, setPostedJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [statusMessage, setStatusMessage] = useState({ message: '', type: '' });
     const resumeInputRef = useRef(null);
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchProfileData = async () => {
             const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const config = { headers: { 'x-auth-token': token } };
-                    const res = await axios.get('http://localhost:5001/api/profile/me', config);
-                    setProfile(res.data);
-                    setFormData({
-                        name: res.data.name || '',
-                        bio: res.data.bio || '',
-                        linkedinURL: res.data.linkedinURL || '',
-                        skills: res.data.skills.join(', ') || ''
-                    });
-                } catch (err) { console.error(err.message); }
-            }
+            if (!token) { setLoading(false); return; }
+
+            try {
+                const config = { headers: { 'x-auth-token': token } };
+                const [profileRes, jobsRes] = await Promise.all([
+                    axios.get('http://localhost:5001/api/profile/me', config),
+                    axios.get('http://localhost:5001/api/profile/jobs', config)
+                ]);
+                setProfile(profileRes.data);
+                setPostedJobs(jobsRes.data);
+                setFormData({
+                    name: profileRes.data.name || '',
+                    bio: profileRes.data.bio || '',
+                    linkedinURL: profileRes.data.linkedinURL || '',
+                    skills: profileRes.data.skills.join(', ') || ''
+                });
+            } catch (err) { console.error(err.message); }
             setLoading(false);
         };
-        fetchProfile();
-    }, []);
+        fetchProfileData();
+    }, [user]);
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -64,8 +71,8 @@ const Dashboard = () => {
             return;
         }
         const keywords = keyword_extractor.extract(formData.bio, { language: "english", remove_digits: true, return_changed_case: true, remove_duplicates: true });
-        const stopwords = ['i', 'me', 'my', 'and', 'the', 'a', 'to', 'of', 'for', 'in', 'with', 'experience', 'work', 'project', 'company', 'university', 'date', 'contact', 'email', 'phone', 'education', 'summary', 'professional', 'skill', 'skills', 'profile', 'objective', 'github', 'linkedin'];
-        const filteredKeywords = keywords.filter(kw => !stopwords.includes(kw) && kw.length > 2 && isNaN(kw));
+        const stopwords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'he', 'him', 'his', 'she', 'her', 'it', 'its', 'they', 'them', 'their', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'from', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can', 'will', 'just', 'should', 'now', 'developer', 'experience', 'skilled', 'worked'];
+        const filteredKeywords = keywords.filter(kw => !stopwords.includes(kw) && kw.length > 1);
         setFormData({ ...formData, skills: filteredKeywords.join(', ') });
     };
 
@@ -95,10 +102,10 @@ const Dashboard = () => {
             res.data.skills.forEach(skill => existingSkills.add(skill));
 
             setFormData({ ...formData, skills: Array.from(existingSkills).join(', ') });
-            alert("Skills extracted from resume and added to your profile!");
+            setStatusMessage({ message: "Skills extracted from resume and added!", type: 'success' });
         } catch (err) {
             console.error(err);
-            alert("Error parsing resume. Please ensure it's a valid PDF.");
+            setStatusMessage({ message: "Error parsing resume. Please ensure it's a valid PDF.", type: 'error' });
         }
     };
 
@@ -178,6 +185,17 @@ const Dashboard = () => {
                                     ) : (
                                         <p className="text-sm text-gray-500">Please add skills to your profile to see job recommendations.</p>
                                     )}
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-gray-200">
+                                    <h3 className="text-xl font-bold text-gray-900">Jobs I've Posted</h3>
+                                    <div className="mt-4 space-y-4">
+                                        {postedJobs.length > 0 ? postedJobs.map(job => (
+                                            <div key={job._id} className="p-4 bg-gray-50 rounded-lg shadow-sm flex items-center justify-between">
+                                                <h4 className="font-semibold text-gray-800">{job.title}</h4>
+                                                <Link to={`/jobs/applications/${job._id}`} className="text-sm text-blue-600 hover:underline">View Applicants ({job.applicants.length})</Link>
+                                            </div>
+                                        )) : <p className="text-sm text-gray-500">You have not posted any jobs yet.</p>}
+                                    </div>
                                 </div>
                             </div>
                         )}

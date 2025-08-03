@@ -5,6 +5,8 @@ const upload = require('../middleware/upload');
 const pdf = require('pdf-parse');
 const keyword_extractor = require('keyword-extractor');
 const User = require('../models/User');
+const Job = require('../models/Job');
+const mongoose = require('mongoose');
 
 // @route   GET api/profile/me
 // @desc    Get current user's profile
@@ -49,6 +51,67 @@ router.post('/parse-resume', [auth, upload.single('resume')], async (req, res) =
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error: Could not parse PDF.');
+    }
+});
+
+// @route   GET api/profile/jobs
+// @desc    Get all jobs posted by the current user
+// @access  Private
+router.get('/jobs', auth, async (req, res) => {
+    try {
+        const jobs = await Job.find({ user: req.user.id }).sort({ createdAt: -1 });
+        res.json(jobs);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/profile/notifications
+// @desc    Get all notifications for the current user
+// @access  Private
+router.get('/notifications', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('notifications');
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+        
+        res.json(user.notifications);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/profile/notifications/:notificationId
+// @desc    Mark a notification as read or perform an action
+// @access  Private
+router.put('/notifications/:notificationId', auth, async (req, res) => {
+    const { action } = req.body;
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+        
+        const notification = user.notifications.id(req.params.notificationId);
+        if (!notification) return res.status(404).json({ msg: 'Notification not found' });
+
+        if (action === 'accept') {
+            const requester = await User.findById(notification.applicantId);
+            if (requester) {
+                user.connections.push(requester._id);
+                requester.connections.push(user._id);
+                await user.save();
+                await requester.save();
+            }
+        }
+        
+        notification.read = true;
+        await user.save();
+        
+        res.json({ msg: 'Notification updated' });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
 });
 

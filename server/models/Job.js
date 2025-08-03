@@ -22,6 +22,12 @@ const JobSchema = new Schema({
         type: Number,
         required: true
     },
+    applicants: [{ 
+        user: { type: Schema.Types.ObjectId, ref: 'User' },
+        status: { type: String, enum: ['Pending', 'Reviewed', 'Accepted', 'Rejected'], default: 'Pending' },
+        appliedAt: { type: Date, default: Date.now },
+        resumeUrl: { type: String }
+    }],
     createdAt: {
         type: Date,
         default: Date.now

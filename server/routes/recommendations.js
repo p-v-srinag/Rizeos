@@ -4,22 +4,27 @@ const auth = require('../middleware/auth');
 const Job = require('../models/Job');
 const User = require('../models/User');
 
-// @route   GET api/recommendations/jobs
-// @desc    Get job recommendations for the logged-in user
-// @access  Private
+const calculateMatchScore = (userSkills, jobSkills) => {
+    if (!userSkills || userSkills.length === 0 || !jobSkills || jobSkills.length === 0) return 0;
+    
+    const userSkillSet = new Set(userSkills.map(s => s.toLowerCase().trim()));
+    const jobSkillSet = new Set(jobSkills.map(s => s.toLowerCase().trim()));
+
+    const intersection = new Set([...userSkillSet].filter(skill => jobSkillSet.has(skill)));
+    
+    const matchPercentage = (intersection.size / jobSkillSet.size) * 100;
+
+    return Math.round(matchPercentage);
+};
+
 router.get('/jobs', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user || user.skills.length === 0) {
-            return res.json([]);
-        }
+        if (!user || user.skills.length === 0) return res.json([]);
         
-        // Find jobs that have at least one skill in common with the user's profile
-        // Also exclude jobs posted by the current user
-        const recommendedJobs = await Job.find({ skills: { $in: user.skills }, user: { $ne: req.user.id } })
-            .populate('user', 'name')
-            .sort({ createdAt: -1 })
-            .limit(5); // Limit to 5 recommendations
+        const allJobs = await Job.find({ user: { $ne: req.user.id } }).populate('user', 'name').sort({ createdAt: -1 });
+
+        const recommendedJobs = allJobs.filter(job => calculateMatchScore(user.skills, job.skills) >= 50);
 
         res.json(recommendedJobs);
     } catch (err) {

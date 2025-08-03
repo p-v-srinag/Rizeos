@@ -2,17 +2,15 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import Notifications from './Notifications.jsx';
-import logo from '/Rizeos.jpg'; // Import the logo image
+import logo from '/Rizeos.jpg';
 
 const Navbar = () => {
     const { logout } = useContext(AuthContext);
-    const navigate = useNavigate();
     const [showNotifications, setShowNotifications] = useState(false);
     const notificationRef = useRef(null);
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
     };
 
     useEffect(() => {
@@ -41,6 +39,7 @@ const Navbar = () => {
                         <NavLink to="/feed" className="px-1 py-5 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-900" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Feed</NavLink>
                         <NavLink to="/jobs" className="px-1 py-5 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-900" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Jobs</NavLink>
                         <NavLink to="/create-job" className="px-1 py-5 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-900" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Post a Job</NavLink>
+                        <NavLink to="/my-applications" className="px-1 py-5 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-900" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>My Applications</NavLink>
                         <NavLink to="/dashboard" className="px-1 py-5 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-900" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>My Profile</NavLink>
                     </div>
                     <div className="flex items-center space-x-4">

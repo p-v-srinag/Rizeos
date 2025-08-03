@@ -7,7 +7,9 @@ import CreateJob from './components/CreateJob.jsx';
 import JobsFeed from './components/JobsFeed.jsx';
 import Feed from './components/Feed.jsx';
 import ProfilePage from './components/ProfilePage.jsx';
-import { AuthContext } from './context/AuthContext.jsx';
+import MyApplications from './components/MyApplications.jsx';
+import JobApplications from './components/JobApplications.jsx'; // Import the new component
+import { AuthProvider, AuthContext } from './context/AuthContext.jsx';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -21,22 +23,31 @@ function App() {
   const { user } = useContext(AuthContext);
 
   return (
+    <div className="min-h-screen bg-[#F8F9FA] overflow-x-hidden">
+      <Routes>
+        <Route path="/" element={!user ? <Login /> : <Navigate to="/feed" />} />
+        <Route path="/register" element={!user ? <Register /> : <Navigate to="/feed" />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/feed" />} />
+        
+        {/* Protected Routes */}
+        <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/create-job" element={<PrivateRoute><CreateJob /></PrivateRoute>} />
+        <Route path="/jobs" element={<PrivateRoute><JobsFeed /></PrivateRoute>} />
+        <Route path="/my-applications" element={<PrivateRoute><MyApplications /></PrivateRoute>} />
+        <Route path="/profile/:userId" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="/jobs/applications/:jobId" element={<PrivateRoute><JobApplications /></PrivateRoute>} />
+      </Routes>
+    </div>
+  );
+}
+
+export default function AppWrapper() {
+  return (
     <Router>
-      <div className="min-h-screen bg-[#F8F9FA] overflow-x-hidden">
-        <Routes>
-          <Route path="/" element={!user ? <Login /> : <Navigate to="/feed" />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to="/feed" />} />
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/feed" />} />
-          
-          {/* Protected Routes */}
-          <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
-          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/create-job" element={<PrivateRoute><CreateJob /></PrivateRoute>} />
-          <Route path="/jobs" element={<PrivateRoute><JobsFeed /></PrivateRoute>} />
-          <Route path="/profile/:userId" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-        </Routes>
-      </div>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </Router>
   );
 }
-export default App;

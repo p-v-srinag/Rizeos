@@ -1,10 +1,9 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext.jsx';
 import MediaModal from './MediaModal.jsx';
 import { jwtDecode } from 'jwt-decode';
-import PostStatusMessage from './PostStatusMessage.jsx'; // Make sure this is imported
 
 const Post = ({ postData, updatePostInFeed }) => {
     const [post, setPost] = useState(postData);
@@ -13,11 +12,9 @@ const Post = ({ postData, updatePostInFeed }) => {
     const [showSharePopup, setShowSharePopup] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const [modalMediaIndex, setModalMediaIndex] = useState(null);
-    const [statusMessage, setStatusMessage] = useState({ message: '', type: '' });
 
     const { user } = useContext(AuthContext);
 
-    // Correctly get the logged-in user's ID from the token
     const userId = user ? jwtDecode(user.token).user.id : null;
 
     const hasClapped = post.claps.some(clap => clap.user && clap.user.toString() === userId);
@@ -67,7 +64,8 @@ const Post = ({ postData, updatePostInFeed }) => {
         } catch (err) {
             console.error(err);
             const msg = err.response?.data?.msg || 'Error sharing post.';
-            setShowSharePopup(true); // Still show the pop-up, but with an error message
+            setStatusMessage({ message: msg, type: 'error' });
+            setShowSharePopup(true);
         }
     };
 
@@ -193,7 +191,6 @@ const Post = ({ postData, updatePostInFeed }) => {
                     onClose={closeModal}
                 />
             )}
-            {statusMessage.message && <PostStatusMessage message={statusMessage.message} type={statusMessage.type} />}
         </div>
     );
 };

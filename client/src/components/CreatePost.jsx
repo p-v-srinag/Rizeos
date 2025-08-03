@@ -65,7 +65,7 @@ const CreatePost = ({ addPostToFeed }) => {
             setIsUploading(false);
         }
     };
-
+    
     const renderPreview = (file, previewUrl) => {
         const fileType = file.type.split('/')[0];
         if (fileType === 'image') {
