@@ -1,10 +1,9 @@
-// client/tailwind.config.js
+// tailwind.config.js
 
-/** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // This line tells Tailwind where to look for classes
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {},
