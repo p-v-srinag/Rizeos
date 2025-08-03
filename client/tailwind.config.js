@@ -1,4 +1,4 @@
-// tailwind.config.js
+// tailwind.config.cjs
 
 module.exports = {
   content: [
